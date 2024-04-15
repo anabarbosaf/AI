@@ -1,0 +1,46 @@
+import cv2
+
+# Carrega o classificador pré-treinado para detecção de faces
+face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+mouth_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_mcs_mouth.xml')
+
+# Inicializa a captura de vídeo
+cap = cv2.VideoCapture('MP4VIDEO.mp4')
+
+while True:
+    # Lê o próximo frame do vídeo
+    ret, frame = cap.read()
+    if not ret:
+        break
+    
+    # Converte o frame para escala de cinza
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    
+    # Detecta faces no frame
+    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
+    
+    # Desenha retângulos ao redor das faces detectadas e verifica a região da boca
+    for (x, y, w, h) in faces:
+        cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
+        cv2.putText(frame, 'Face Detectada', (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 0, 0), 2)
+
+        # Verifica se há uma região escura na área da boca
+        roi_gray = gray[y:y+h, x:x+w]
+        roi_color = frame[y:y+h, x:x+w]
+        mouths = mouth_cascade.detectMultiScale(roi_gray, scaleFactor=1.5, minNeighbors=5, minSize=(30, 30))
+        
+        if len(mouths) == 0:
+            cv2.putText(frame, 'Com Mascara', (x, y+h+30), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+        else:
+            cv2.putText(frame, 'Sem Mascara', (x, y+h+30), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
+
+    # Exibe o frame com as faces detectadas e a classificação de máscara
+    cv2.imshow('Detecção de Faces', frame)
+
+    # Verifica se a tecla 'Esc' foi pressionada para sair do loop
+    if cv2.waitKey(1) == 27:
+        break
+
+# Libera os recursos
+cap.release()
+cv2.destroyAllWindows()
